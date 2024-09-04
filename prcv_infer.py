@@ -3,6 +3,7 @@ import os
 import cv2
 import re
 import argparse
+from PIL import Image
 import json
 import shutil
 import os.path as osp
@@ -60,6 +61,7 @@ def inference_detector(model,
                        nms_thr=0.5,
                        use_amp=False,
                        task=None):
+    W, H  = Image.open(image).size                                               #读取图片，然后获取图片的宽和高
     image_id = image.split('/')[-1].split('.')[0]
     data_info = dict(img_id=0, img_path=image, texts=texts)
     data_info = test_pipeline(data_info)
@@ -74,12 +76,14 @@ def inference_detector(model,
 
 
         #----------将面积小的检测框的置信度放大输出----------
+        pred_instances = pred_instances[1500<abs(pred_instances.bboxes[:,3]-pred_instances.bboxes[:,1])*   
+                                         abs(pred_instances.bboxes[:,2]-pred_instances.bboxes[:,0])]
+        
         low_score_pred = pred_instances[pred_instances.scores.float() <= score_thr]
         small_area_pred = low_score_pred[abs(low_score_pred.bboxes[:,3]-low_score_pred.bboxes[:,1])*   
                                          abs(low_score_pred.bboxes[:,2]-low_score_pred.bboxes[:,0])<5000]
-        small_area_pred = small_area_pred[1200<abs(small_area_pred.bboxes[:,3]-small_area_pred.bboxes[:,1])*   
-                                         abs(small_area_pred.bboxes[:,2]-small_area_pred.bboxes[:,0])]
-        small_area_pred = small_area_pred[small_area_pred.scores.float() > 0.05]
+        
+        small_area_pred = small_area_pred[small_area_pred.scores.float() > 0.1]
 
         pred_instances = pred_instances[pred_instances.scores.float() >
                                         score_thr]
@@ -88,16 +92,10 @@ def inference_detector(model,
         indices = pred_instances.scores.float().topk(max_dets)[1]
         pred_instances = pred_instances[indices]
     
-    tasknum = {}
-    tasknum['ebike'] = 1
-    tasknum['carry'] = 2
-    tasknum['mask'] = 3
-    tasknum['hat'] = 5
-    tasknum['head'] = 6
 
     pred_instances = pred_instances.to_dict()
     labels = pred_instances.pop('labels') 
-    pred_instances['category_id'] = labels + tasknum[task]                #测试时要根据classes.txt的类别顺序修改
+    pred_instances['category_id'] = labels               
     for key, value in pred_instances.items():
             pred_instances[key] = value.tolist()
     pred_instances['image_id'] = image_id
@@ -106,30 +104,30 @@ def inference_detector(model,
     
     small_area_pred = small_area_pred.to_dict()
     labels = small_area_pred.pop('labels') 
-    small_area_pred['category_id'] = labels + tasknum[task]                #测试时要根据classes.txt的类别顺序修改
+    small_area_pred['category_id'] = labels               
     for key, value in small_area_pred.items():
             small_area_pred[key] = value.tolist()
     small_area_pred['image_id'] = image_id
     
     result_perimg = []
     for i in range(len(pred_instances['scores'])):
-        xywh = xyxy2xywh(pred_instances['bboxes'][i])
+        xywh = xyxy2xywh(pred_instances['bboxes'][i],W,H)
         result_perimg.append(
             dict(
                 image_id=image_id,
                 category_id=pred_instances['category_id'][i],
                 bbox=xywh,
-                score=pred_instances['scores'][i]))
+                score=round(pred_instances['scores'][i],2)))
         
     sarea_infer = []
     for i in range(len(small_area_pred['scores'])):
-        xywh = xyxy2xywh(small_area_pred['bboxes'][i])
+        xywh = xyxy2xywh(small_area_pred['bboxes'][i],W,H)
         sarea_infer.append(
             dict(
                 image_id=image_id,
                 category_id=small_area_pred['category_id'][i],
                 bbox=xywh,
-                score=small_area_pred['scores'][i]))
+                score=round(small_area_pred['scores'][i],2)))
 
     return result_perimg, sarea_infer                                      #返回每张图像的推理结果
 
@@ -176,9 +174,9 @@ def gettaskid(val_path,task):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='YOLO-World Demo')
-    parser.add_argument('--config', default="configs/finetune_coco/yolo_world_v2_x_vlpan_bn_2e-4_80e__finetune_prcv.py", 
+    parser.add_argument('--config', default="configs/finetune_coco/yolo_world_v2_l_vlpan_bn_sgd__prcv2.py", 
                         help='test config file path')
-    parser.add_argument('--checkpoint', default="work_dirs/yolo_world_v2_x_vlpan_bn_2e-4_80e__finetune_prcv/epoch_40.pth",
+    parser.add_argument('--checkpoint', default="weights/prcv2.pth",
                         help='checkpoint file')
     parser.add_argument('--image_path', default='data/prcv/val', help='image path,must be a dir.')
     parser.add_argument('--prcv-task', default='mask', help='choose prcv task, including ebike,carry,mask,hat,head')
@@ -264,10 +262,13 @@ if __name__ == '__main__':
         assert osp.isdir(args.image_path)
         img_list = gettaskid(args.image_path,args.prcv_task)
         images = [osp.join(args.image_path, img) for img in img_list]
+    elif not osp.isfile(args.image):
+        images = [
+            osp.join(args.image, img) for img in os.listdir(args.image)
+            if img.endswith('.png') or img.endswith('.jpg')
+        ]
     else:
-        assert osp.isdir(args.image_path)
-        images = [osp.join(args.image_path, img) for img in os.listdir(args.image_path) if img.endswith('.jpg')]
-
+        images = [args.image]
 
     # reparameterize texts
     result_list = []
@@ -297,10 +298,10 @@ if __name__ == '__main__':
     
 
     if args.text[:3] == '检测:':
-        with open(os.path.join(output_dir, args.prcv_task + '_detec.json'), 'w') as f:
+        with open(os.path.join(output_dir, 'detec.json'), 'w') as f:
             json.dump(result_list, f, indent=4)
     elif args.text[:3] == '识别:':
-        with open(os.path.join(output_dir, args.prcv_task + '_recog.json'), 'w') as f:
+        with open(os.path.join(output_dir, 'recog.json'), 'w') as f:
             json.dump(recog_dic, f, indent=2)
     
     if args.draw:

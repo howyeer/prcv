@@ -18,6 +18,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-wheel
 
 RUN pip3 install --upgrade pip \
+    && pip3 install --no-cache-dir --index-url https://download.pytorch.org/whl/cu118 \
+        torch         \
+        torchvision   \
+        torchaudio    \
+        wheel         \
     && pip3 install   \
         gradio        \
         opencv-python \
@@ -25,12 +30,8 @@ RUN pip3 install --upgrade pip \
         mmengine      \
         setuptools    \
         openmim       \
-    && mim install mmcv==2.0.0 \
-    && pip3 install --no-cache-dir --index-url https://download.pytorch.org/whl/cu118 \
-        wheel         \
-        torch         \
-        torchvision   \
-        torchaudio
+    && mim install mmcv==2.0.0 
+             
 
 COPY . /prcv
 WORKDIR /prcv

@@ -136,7 +136,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='YOLO-World Demo')
     parser.add_argument('--config', default="configs/finetune_coco/yolo_world_v2_l_vlpan_bn_sgd__prcv2.py", 
                         help='test config file path')
-    parser.add_argument('--checkpoint', default="work_dirs/yolo_world_v2_l_vlpan_bn_sgd__prcv2/epoch_50.pth",
+    parser.add_argument('--checkpoint', default="weights/prcv2.pth",
                         help='checkpoint file')
     parser.add_argument('--image', default='img/bus.jpg', help='image path, include image file or dir.')
     parser.add_argument(
