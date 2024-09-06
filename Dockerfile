@@ -7,38 +7,45 @@ ENV FORCE_CUDA="1"
 ENV MMCV_WITH_OPS=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-pip     \
-    libgl1-mesa-glx \
-    libsm6          \
-    libxext6        \
-    libxrender-dev  \
-    libglib2.0-0    \
-    git             \
-    python3-dev     \
-    python3-wheel
+    python3-pip       \
+    curl              \
+    wget
+#     libgl1-mesa-glx \
+#     libsm6          \
+#     libxext6        \
+#     libxrender-dev  \
+#     libglib2.0-0    \
+#     git             \
+#     python3-dev     \
+#     python3-wheel
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt 
 
 RUN pip3 install --upgrade pip \
-    && pip3 install --no-cache-dir --index-url https://download.pytorch.org/whl/cu118 \
-        torch         \
-        torchvision   \
-        torchaudio    \
-        wheel         \
+#     && pip3 install --no-cache-dir --index-url https://download.pytorch.org/whl/cu118 \
+#         torch         \
+#         torchvision   \
+#         torchaudio    \
+#         wheel         \
     && pip3 install   \
-        gradio        \
-        opencv-python \
-        supervision   \
-        mmengine      \
-        setuptools    \
+#         gradio        \
+#         opencv-python \
+#         supervision   \
+#         mmengine      \
+#         setuptools    \
         openmim       \
     && mim install mmcv==2.0.0 
-             
+
+
+RUN pip list
 
 COPY . /prcv
 WORKDIR /prcv
 
-RUN pip3 install -e .
+# RUN pip3 install -e .
 
-RUN curl -o weights/$WEIGHT -L https://huggingface.co/howyeer/prcv/blob/main/prcv2.pth
+# RUN wget -o weights/$WEIGHT -L https://huggingface.co/howyeer/prcv/resolve/main/prcv2.pth
 
-ENTRYPOINT [ "python3", "demo.py", "prcv_infer.py"]
+ENTRYPOINT [ "python", "prcv_infer.py"]
 CMD ["configs/finetune_coco/$MODEL", "weights/$WEIGHT"]
