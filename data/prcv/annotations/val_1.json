@@ -1,0 +1,96 @@
+{
+    "info": {
+        "description": "",
+        "url": "",
+        "version": "",
+        "year": 2024,
+        "contributor": "howyeer",
+        "date_created": "2022-07-8"
+    },
+    "licenses": [
+        {
+            "id": 1,
+            "name": null,
+            "url": null
+        }
+    ],
+    "categories": [
+        {
+            "id": 1,
+            "name": "ebike",
+            "supercategory": "None"
+        },
+        {
+            "id": 2,
+            "name": "carry",
+            "supercategory": "None"
+        },
+        {
+            "id": 3,
+            "name": "face",
+            "supercategory": "None"
+        },
+        {
+            "id": 4,
+            "name": "mask",
+            "supercategory": "None"
+        },
+        {
+            "id": 5,
+            "name": "chef hat",
+            "supercategory": "None"
+        },
+        {
+            "id": 6,
+            "name": "head",
+            "supercategory": "None"
+        },
+        {
+            "id": 7,
+            "name": "other hat",
+            "supercategory": "None"
+        }
+    ],
+    "images": [
+        {
+            "file_name": "00345.jpg",
+            "height": 1080,
+            "width": 1920,
+            "date_captured": "2024-07-19",
+            "id": "00345",
+            "license": 1,
+            "color_url": "",
+            "flickr_url": ""
+        }
+    ],
+    "annotations": [
+        {
+            "id": 34500,
+            "image_id": "00345",
+            "category_id": 1,
+            "iscrowd": 0,
+            "area": 254127.17845278716,
+            "bbox": [
+            967.6780799999999,
+            813.41496,
+            478.59263999999996,
+            530.98848
+            ],
+            "segmentation": []
+        },
+        {
+            "id": 34501,
+            "image_id": "00345",
+            "category_id": 1,
+            "iscrowd": 0,
+            "area": 307658.9078267904,
+            "bbox": [
+            428.03712,
+            697.82796,
+            503.42015999999995,
+            611.1374400000001
+            ],
+            "segmentation": []
+        }
+    ] 
+}
